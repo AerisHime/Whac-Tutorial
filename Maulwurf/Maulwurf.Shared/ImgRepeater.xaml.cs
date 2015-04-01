@@ -15,43 +15,43 @@ using Windows.UI.Xaml.Navigation;
 
 // The User Control item template is documented at http://go.microsoft.com/fwlink/?LinkId=234236
 
-namespace Whac_A_Mole
+namespace Maulwurf
 {
     public sealed partial class ImgRepeater : UserControl
     {
 
-        public int Count { 
+
+        public int Count
+        {
             get { return count; }
-            set {
+            set
+            {
                 if (count == value)
                 {
                     return;
                 }
-                
                 count = value;
-                SetImage();
-            } 
+                SetImages();
+            }
         }
-
-
-        public ImageSource Img {
+        public ImageSource Img
+        {
             get { return img; }
-            set {
+            set
+            {
                 if (img == value)
                 {
                     return;
                 }
                 img = value;
-                SetImage();
+                SetImages();
             }
         }
-        
-        
-        
+
         private int count;
         private ImageSource img;
 
-        private void SetImage()
+        private void SetImages()
         {
             Images.Children.Clear();
             for (int i = 0; i < Count; i++)
@@ -64,5 +64,7 @@ namespace Whac_A_Mole
         {
             this.InitializeComponent();
         }
+
+
     }
 }
