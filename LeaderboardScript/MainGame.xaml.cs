@@ -126,7 +126,7 @@ namespace Whac_A_Mole
         }
         private void InsertNewMole()
         {
-            var pos = rnd.Next(0, 8);
+            var pos = rnd.Next(0, 9);
             if (moles[pos].Timer < 0)
             {
                 moles[pos].Timer = rnd.Next(10, 30);
