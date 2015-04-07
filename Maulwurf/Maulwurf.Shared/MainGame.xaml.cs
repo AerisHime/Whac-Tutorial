@@ -103,7 +103,7 @@ namespace Maulwurf
 
         private void InsertNewMole()
         {
-            var pos = rnd.Next(0, 8);
+            var pos = rnd.Next(0, 9);
             if (moles[pos].timer < 0)
             {
                 moles[pos].timer = rnd.Next(10, 30);
