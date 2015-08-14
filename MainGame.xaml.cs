@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
-using System.Threading.Tasks;
+using System.Text;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
@@ -13,187 +12,163 @@ using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 
-// The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
+// Die Elementvorlage "Leere Seite" ist unter http://go.microsoft.com/fwlink/?LinkId=234238 dokumentiert.
 
-namespace Whac_A_Mole
+namespace Maulwurf_MVA
 {
-
     /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// Eine leere Seite, die eigenständig verwendet werden kann oder auf die innerhalb eines Rahmens navigiert werden kann.
     /// </summary>
     public sealed partial class MainGame : Page
     {
-        private bool isRunning;
-        /*
-         * Spielfigurendefinition
-         * */
-        class Player
-        {
-            public int Score { get; set; }
-            public int Lives { get; set; }
-
-        }
-        class Mole
-        {
-            public int Timer { get; set; }
-            public Image Img { get; set; }
-        }
-
+        private Moles[] mole = new Moles[9];
         private Player player;
-        private Mole[] moles = new Mole[9];
-
-        //Zeitzählervariablen
+        private DispatcherTimer gameTimer;
         private int timeToNextMole;
-        private int counter;
-
-        private DispatcherTimer countdownTimer;
-
         private Random rnd = new Random((int)DateTime.Now.Ticks);
-
+        private bool isRunning = false;
         public MainGame()
         {
             this.InitializeComponent();
             InitGame();
+            
         }
 
         private void InitGame()
         {
+            for (int i = 0; i < mole.Length; i++)
+            {
+                mole[i] = new Moles();
+            }
             isRunning = true;
-            player = new Player { Lives = 4, Score = 0 };
-            counter = 3;
-            lives.Count = player.Lives;
-            txtScore.Text = player.Score.ToString();
-            txtCountdown.Text = counter.ToString();
-            for (int i = 0; i < moles.Length; i++)
-            {
-                moles[i] = new Mole { Timer = -1, Img = null };
-            }
-            countdownTimer = new DispatcherTimer();
-            countdownTimer.Interval = new TimeSpan(0, 0, 1);
-            countdownTimer.Tick += countdownTimer_Tick;
-            countdownTimer.Start();
+            timeToNextMole = 1;
+            player = new Player { Score = 0, Lives = 3 };
+            Lives.Count = player.Lives;
+            ScoreText.Text = player.Score.ToString();
+            gameTimer = new DispatcherTimer();
+            gameTimer.Interval = new TimeSpan(0, 0, 1);
+            gameTimer.Tick += GameTimer_Tick;
+            gameTimer.Start();
         }
 
-        void countdownTimer_Tick(object sender, object e)
+        private void GameTimer_Tick(object sender, object e)
         {
-            counter -= 1;
-            txtCountdown.Text = counter.ToString();
-            if (counter <= -1)
+            if (isRunning)
             {
-                txtCountdown.Visibility = Visibility.Collapsed;
-                countdownTimer.Stop();
-                StartGame();
-            }
-        }
-
-        private async void StartGame()
-        {
-            timeToNextMole = 10;
-            while (isRunning)
-            {
-                await Task.Delay(100);
-                CheckAllMoles();
-                timeToNextMole -= 1;
-                if (timeToNextMole <= 0)
+                if (timeToNextMole > 0)
+                {
+                    timeToNextMole -= 1;
+                }
+                else if (timeToNextMole <= 0)
                 {
                     InsertNewMole();
+                    timeToNextMole = rnd.Next(1, 4);
                 }
-                txtScore.Text = player.Score.ToString();
-                lives.Count = player.Lives;
-
-                
+                CheckAllMoles(); 
             }
         }
 
-        private void InsertNewMole()
+        private void MinusPoint()
         {
-            var pos = rnd.Next(0, 8);
-            if (moles[pos].Timer < 0)
+            player.Lives -= 1;
+            Lives.Count = player.Lives;
+            if (player.Lives <= 0)
             {
-                moles[pos].Timer = rnd.Next(10, 30);
-                timeToNextMole = rnd.Next(10, 40);
-                var row = pos / 3;
-                var column = pos % 3;
-                moles[pos].Img = new Image();
-                gameField.Children.Add(moles[pos].Img);
-                moles[pos].Img.SetValue(Grid.ColumnProperty, column);
-                moles[pos].Img.SetValue(Grid.RowProperty, row);
-                moles[pos].Img.Source = new BitmapImage(new Uri("ms-appx:///Assets/Target.png"));
-                moles[pos].Img.Tag = moles[pos];
-                moles[pos].Img.Tapped += Img_Tapped;
-            }
-        }
-
-        void Img_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            var img = sender as Image;
-            if (!isRunning)
-            {
-                return;
-            }
-            if (img == null)
-            {
-                return;
-            }
-            var tempMole = img.Tag as Mole;
-            if (tempMole == null)
-            {
-                return;
-            }
-            tempMole.Timer = -1;
-            gameField.Children.Remove(tempMole.Img);
-            tempMole.Img = null;
-            player.Score += 50;
-
-        }
-
-
-        private void CheckAllMoles()
-        {
-            for (int i = 0; i < moles.Length; i++)
-            {
-                if (moles[i].Timer >= 0)
-                {
-                    moles[i].Timer -= 1;
-                }
-                else
-                {
-                    if (moles[i].Img != null)
-                    {
-                        gameField.Children.Remove(moles[i].Img);
-                        moles[i].Img = null;
-                        player.Lives -= 1;
-                        if (player.Lives <= 0)
-                        {
-                            GameOver();
-                            break;
-                        }
-                       
-                    }
-                }
+                GameOver();
             }
         }
 
         private void GameOver()
         {
+            for (int i = 0; i < mole.Length; i++)
+            {
+                if (mole[i].Img != null)
+                {
+                    gameField.Children.Remove(mole[i].Img);
+                    mole[i].Img = null;
+                    mole[i].Timer = -1;
+                }
+            }
 
+            gameTimer.Stop();
             isRunning = false;
-            txtCountdown.Text = Encoding.Unicode.GetString(new byte[] { 0x39, 0x26 }, 0, 2);
-            txtCountdown.Visibility = Visibility.Visible;
-
+            overlay.Text = Encoding.Unicode.GetString(new byte[] { 0x39, 0x26 }, 0, 2);
+            overlay.Visibility = Visibility.Visible;
         }
 
-        private void txtCountdown_Tapped(object sender, TappedRoutedEventArgs e)
+        private void CheckAllMoles()
         {
-            if (!isRunning)
+            for (int i = 0; i < mole.Length; i++)
             {
-                InitGame();
+                if (mole[i].Timer >= 0)
+                {
+                    mole[i].Timer -= 1;
+                }
+                else
+                {
+                    if (mole[i].Img != null)
+                    {
+                        gameField.Children.Remove(mole[i].Img);
+                        mole[i].Img = null;
+                        mole[i].Timer = -1;
+                        MinusPoint();
+                    }
+                }
             }
         }
 
+        private void AddScore(int scoreValue)
+        {
+            player.Score += scoreValue;
+            ScoreText.Text = player.Score.ToString();
+            
+        }
 
+        private void InsertNewMole()
+        {
+            int pos = rnd.Next(0,mole.Length);
+
+            if (mole[pos].Timer == -1 && mole[pos].Img == null)
+            {
+                mole[pos].Generate(pos);
+                mole[pos].Img.Tag = mole[pos];
+                mole[pos].Img.Tapped += Img_Tapped;
+                gameField.Children.Add(mole[pos].Img); 
+            }
+            
+        }
+
+        private void Img_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (!isRunning)
+            {
+                return;
+            }
+            var img = sender as Image;
+            if (img == null)
+            {
+                return;
+            }
+            var tempMole = img.Tag as Moles;
+            if (tempMole == null)
+            {
+                return;
+            }
+            AddScore(1);
+            gameField.Children.Remove(tempMole.Img);
+            tempMole.Img = null;
+            tempMole.Timer = -1;
+        }
+
+        private void overlay_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (!isRunning)
+            {
+                overlay.Visibility = Visibility.Collapsed;
+                InitGame();
+            }
+        }
     }
 }
